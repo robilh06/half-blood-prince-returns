@@ -1,0 +1,88 @@
+CREATE DATABASE IF NOT EXISTS chronoweaver;
+USE chronoweaver;
+
+-- 1. Timelines (The "Worlds")
+CREATE TABLE IF NOT EXISTS timelines (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT
+);
+
+-- 2. Events
+CREATE TABLE IF NOT EXISTS events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timeline_id INT,
+    title VARCHAR(255),
+    event_year INT,
+    description TEXT,
+    FOREIGN KEY (timeline_id) REFERENCES timelines(id)
+);
+
+-- 3. Characters
+CREATE TABLE IF NOT EXISTS characters (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timeline_id INT,
+    name VARCHAR(255),
+    role VARCHAR(255),
+    bio TEXT,
+    FOREIGN KEY (timeline_id) REFERENCES timelines(id)
+);
+
+-- 4. Locations
+CREATE TABLE IF NOT EXISTS locations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timeline_id INT,
+    name VARCHAR(255),
+    description TEXT,
+    FOREIGN KEY (timeline_id) REFERENCES timelines(id)
+);
+
+-- Seed Data (To make it look like your screenshot immediately)
+INSERT INTO timelines (title, description) 
+VALUES ('The Aethelgard Saga', 'A sweeping epic of fallen empires and nascent magic in the fractured continent of Veridia.');
+
+INSERT INTO events (timeline_id, title, event_year, description) 
+VALUES 
+(1, 'The Sundering', 0, 'A cataclysmic event that shattered the Elder Empire.'),
+(1, 'The Battle of the Twin Moons', 3045, 'A decisive battle where General Kaelen sacrificed himself.');
+
+INSERT INTO characters (timeline_id, name, role, bio) 
+VALUES 
+(1, 'General Kaelen', 'Legendary Warrior', 'Renowned for his strategic genius and unwavering loyalty.'),
+(1, 'Lyra Sunstrider', 'Heir of Eldoria', 'The last heir of the Eldorian throne, skilled diplomat.');
+
+INSERT INTO locations (timeline_id, name, description) 
+VALUES 
+(1, 'The Valley of Whispers', 'A desolate, mist-shrouded valley where the Battle of the Twin Moons took place.'),
+(1, 'Eldoria, The City of Light', 'The restored capital city of the Kingdom of Eldoria.');
+USE chronoweaver;
+
+-- 5. The Junction Table (Links Events <-> Characters)
+CREATE TABLE IF NOT EXISTS event_characters (
+    event_id INT,
+    character_id INT,
+    role_note VARCHAR(255), -- e.g. "Commander", "Traitor", "Casualty"
+    PRIMARY KEY (event_id, character_id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+);
+
+-- Seed Data: Let's put General Kaelen in the Battle of the Twin Moons
+-- (Assuming ID 2 is the Battle, and ID 1 is Kaelen based on previous seed)
+INSERT IGNORE INTO event_characters (event_id, character_id, role_note)
+VALUES (2, 1, 'Sacrificed himself to hold the line');
+USE chronoweaver;
+
+-- 6. Character Relationships (Many-to-Many Recursive)
+CREATE TABLE IF NOT EXISTS character_relationships (
+    char1_id INT,
+    char2_id INT,
+    relationship_type VARCHAR(100), -- e.g. "Father", "Rival", "Mentor"
+    PRIMARY KEY (char1_id, char2_id),
+    FOREIGN KEY (char1_id) REFERENCES characters(id) ON DELETE CASCADE,
+    FOREIGN KEY (char2_id) REFERENCES characters(id) ON DELETE CASCADE
+);
+
+-- Seed Data: General Kaelen is the Mentor of Lyra
+INSERT IGNORE INTO character_relationships (char1_id, char2_id, relationship_type)
+VALUES (1, 2, 'Mentor');
